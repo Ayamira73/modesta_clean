@@ -12,7 +12,7 @@ class ModestaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Modestaaaa',
+      title: 'Modestaadbsugfdaa',
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFF7F1EB),
         fontFamily: 'Arial',

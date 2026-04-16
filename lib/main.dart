@@ -12,7 +12,7 @@ class ModestaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Modestaadbsugfdaa',
+      title: 'Modes78a',
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFF7F1EB),
         fontFamily: 'Arial',
@@ -57,10 +57,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.checkroom_outlined),
             label: 'Feed',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Profile',

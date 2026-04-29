@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Beispieldaten für die Karten
   final List<Map<String, dynamic>> _outfits = [
     {'user': '@sofia.style', 'desc': 'Summer vibes', 'color': Color(0xFFC5D1B7)},
-    {'user': '@mia.looks', 'desc': 'Street style', 'color': Color(0xFFD8C4B6)},
+    {'user': '@mira.looks', 'desc': 'Street style', 'color': Color(0xFFD8C4B6)},
     {'user': '@ana.fashion', 'desc': 'Elegant night', 'color': Color(0xFFB8C5D6)},
     {'user': '@lena.style', 'desc': 'Beige aesthetic', 'color': Color(0xFFE5D9C3)},
   ];

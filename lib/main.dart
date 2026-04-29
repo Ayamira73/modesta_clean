@@ -14,7 +14,7 @@ class ModestaApp extends StatelessWidget {
       title: 'Modesta',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // Deine neue Farbpalette
+        // Farbpalette
         scaffoldBackgroundColor: const Color(0xFFF9F5EB), // Beige
         primaryColor: const Color(0xFF8DAA81),           // Pistazien-Grün
         useMaterial3: true,

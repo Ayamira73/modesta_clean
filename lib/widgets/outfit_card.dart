@@ -1,113 +1,49 @@
 import 'package:flutter/material.dart';
 
-// Widget за показване на един аутфит в списъка
-class OutfitCard extends StatefulWidget {
+class OutfitCard extends StatelessWidget {
   final Map<String, dynamic> outfit;
 
   const OutfitCard({super.key, required this.outfit});
 
   @override
-  State<OutfitCard> createState() => _OutfitCardState();
-}
-
-class _OutfitCardState extends State<OutfitCard> {
-  bool _isLiked = false;
-
-  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF2D2D44),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
       ),
-      clipBehavior: Clip.hardEdge,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          // Снимка на аутфита (placeholder с цвят)
+          // Bild-Bereich
           Expanded(
             child: Container(
               width: double.infinity,
-              color: widget.outfit['color'],
-              child: const Icon(
-                Icons.checkroom,
-                size: 60,
-                color: Colors.white30,
+              decoration: BoxDecoration(
+                color: outfit['color'], // Platzhalterfarbe
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
               ),
+              child: const Icon(Icons.checkroom, size: 50, color: Colors.white70),
             ),
           ),
-
-          // Информация под снимката
+          // Info-Bereich unten
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
-                // Ред с потребител и харесване
                 Row(
                   children: [
-                    // Малка иконка за потребител
-                    const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Color(0xFF4A4A6A),
-                      child: Icon(Icons.person, size: 14, color: Colors.white),
-                    ),
-                    const SizedBox(width: 6),
-
-                    // Потребителско име
-                    Expanded(
-                      child: Text(
-                        widget.outfit['user'],
-                        style: const TextStyle(
-                          color: Color(0xFFE8D5B7),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                    // Бутон харесване
-                    GestureDetector(
-                      onTap: () => setState(() => _isLiked = !_isLiked),
-                      child: Icon(
-                        _isLiked ? Icons.favorite : Icons.favorite_border,
-                        size: 16,
-                        color: _isLiked ? Colors.redAccent : const Color(0xFF888888),
-                      ),
-                    ),
+                    const Icon(Icons.account_circle, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(outfit['user'], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    const Icon(Icons.favorite_border, size: 14, color: Colors.grey),
                   ],
                 ),
-
                 const SizedBox(height: 4),
-
-                // Описание
-                Text(
-                  widget.outfit['description'],
-                  style: const TextStyle(
-                    color: Color(0xFFAAAAAA),
-                    fontSize: 11,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 4),
-
-                // Звезди за рейтинг
-                Row(
-                  children: List.generate(5, (i) {
-                    return Icon(
-                      i < widget.outfit['rating'].floor()
-                          ? Icons.star
-                          : Icons.star_border,
-                      size: 12,
-                      color: const Color(0xFFE8D5B7),
-                    );
-                  }),
-                ),
+                Text(outfit['desc'], style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1),
               ],
             ),
           ),

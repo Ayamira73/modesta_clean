@@ -56,7 +56,7 @@ class SplashScreen extends StatelessWidget {
 
             const SizedBox(height: 64),
 
-            // "Get Started" Button in Pistaziengrün
+            // "Get Started" Button
             SizedBox(
               width: double.infinity,
               height: 56,

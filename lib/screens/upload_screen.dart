@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 
-// Екран 5: Качване на аутфит
+// to post the outfit
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
 
@@ -42,7 +42,7 @@ class _UploadScreenState extends State<UploadScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // Зона за качване на снимка
+            // place to upload a picture/ outfit
             GestureDetector(
               onTap: () {
                 // В реалното приложение тук се отваря галерията
@@ -91,7 +91,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
             const SizedBox(height: 24),
 
-            // Описание
+            // Description
             _buildLabel('Description'),
             const SizedBox(height: 8),
             TextField(

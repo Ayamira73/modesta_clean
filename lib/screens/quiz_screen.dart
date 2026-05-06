@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 
-// NOTE: To enable "first launch only" behaviour, add shared_preferences to
-// pubspec.yaml, then uncomment the SharedPreferences lines below.
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -165,7 +163,7 @@ class _QuizScreenState extends State<QuizScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        // No close button — quiz is mandatory on first launch
+          // No close button — quiz is mandatory on first launch
         leading: _step > 0
             ? IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,

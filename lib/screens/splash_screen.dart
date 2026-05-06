@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'quiz_screen.dart';
 
-// To enable real first-launch detection:
-// 1. Add to pubspec.yaml:  shared_preferences: ^2.2.2
-// 2. Run: flutter pub get
-// 3. Uncomment the SharedPreferences lines below and remove the _quizDone = false line.
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,14 +19,10 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigate() async {
-    // Wait for splash to show
+
     await Future.delayed(const Duration(seconds: 2));
 
-    // --- SharedPreferences version (uncomment when ready) ---
-    // final prefs = await SharedPreferences.getInstance();
-    // final bool quizDone = prefs.getBool('quiz_done') ?? false;
 
-    // --- Simple version (quiz shows every time, change to true to skip) ---
     const bool quizDone = false;
 
     if (!mounted) return;

@@ -1,49 +1,90 @@
 import 'package:flutter/material.dart';
 
 class OutfitCard extends StatelessWidget {
-  final Map<String, dynamic> outfit;
+  final String user;
+  final String label;
+  final Color color;
+  final bool liked;
+  final VoidCallback onLike;
 
-  const OutfitCard({super.key, required this.outfit});
+  const OutfitCard({
+    super.key,
+    required this.user,
+    required this.label,
+    required this.color,
+    required this.liked,
+    required this.onLike,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bild-Bereich
+          // Image area
           Expanded(
             child: Container(
-              width: double.infinity,
               decoration: BoxDecoration(
-                color: outfit['color'], // Platzhalterfarbe
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                color: color,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
-              child: const Icon(Icons.checkroom, size: 50, color: Colors.white70),
+              child: Center(
+                child: Icon(
+                  Icons.checkroom,
+                  color: color.computeLuminance() > 0.5
+                      ? Colors.white.withOpacity(0.6)
+                      : Colors.white,
+                  size: 48,
+                ),
+              ),
             ),
           ),
-          // Info-Bereich unten
+          // Info
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.account_circle, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(outfit['user'], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    const Icon(Icons.favorite_border, size: 14, color: Colors.grey),
+                    Text(
+                      user,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF3D3D3D),
+                      ),
+                    ),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(outfit['desc'], style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1),
+                GestureDetector(
+                  onTap: onLike,
+                  child: Icon(
+                    liked ? Icons.favorite : Icons.favorite_border,
+                    color: liked ? Colors.pinkAccent : Colors.grey.shade400,
+                    size: 18,
+                  ),
+                ),
               ],
             ),
           ),

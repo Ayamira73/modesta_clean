@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 
-// Екран 5: Качване на аутфит
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
 
@@ -10,214 +8,156 @@ class UploadScreen extends StatefulWidget {
 }
 
 class _UploadScreenState extends State<UploadScreen> {
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _tagsController = TextEditingController();
-  String _selectedCategory = 'Casual';
-  bool _photoAdded = false;
+  String? _selectedCategory;
+  bool _uploaded = false;
 
-  final List<String> _categories = [
-    'Casual', 'Street Style', 'Elegant', 'Minimalist', 'Sporty', 'Vintage'
-  ];
+  final List<String> _categories = ['Tops', 'Bottoms', 'Dresses', 'Shoes', 'Accessories'];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFFF9F5EB),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12122A),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Share Your Outfit',
-          style: TextStyle(color: Color(0xFFE8D5B7), fontWeight: FontWeight.bold),
-        ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Color(0xFFE8D5B7)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF3D3D3D)),
           onPressed: () => Navigator.pop(context),
         ),
+        title: const Text(
+          'Add to Closet',
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            color: Color(0xFF3D3D3D),
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Зона за качване на снимка
+            // Upload area
             GestureDetector(
-              onTap: () {
-                // В реалното приложение тук се отваря галерията
-                setState(() => _photoAdded = true);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Opening gallery...')),
-                );
-              },
+              onTap: () => setState(() => _uploaded = true),
               child: Container(
                 width: double.infinity,
                 height: 220,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2D2D44),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: _photoAdded
-                        ? const Color(0xFFE8D5B7)
-                        : const Color(0xFF444466),
-                    width: 2,
+                    color: const Color(0xFF8DAA81).withOpacity(0.4),
+                    width: 1.5,
+                    style: BorderStyle.solid,
                   ),
                 ),
-                child: Column(
+                child: _uploaded
+                    ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      _photoAdded ? Icons.check_circle : Icons.add_photo_alternate_outlined,
-                      size: 56,
-                      color: _photoAdded
-                          ? const Color(0xFFE8D5B7)
-                          : const Color(0xFF666688),
+                    const Icon(Icons.checkroom, size: 64, color: Color(0xFF8DAA81)),
+                    const SizedBox(height: 8),
+                    Text('Item added!',
+                        style: TextStyle(color: Colors.grey.shade600)),
+                  ],
+                )
+                    : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8DAA81).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.add_photo_alternate_outlined,
+                          size: 36, color: Color(0xFF8DAA81)),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      _photoAdded ? 'Photo added!' : 'Tap to add photo',
-                      style: TextStyle(
-                        color: _photoAdded
-                            ? const Color(0xFFE8D5B7)
-                            : const Color(0xFF888888),
-                        fontSize: 16,
-                      ),
-                    ),
+                    const Text('Tap to upload photo',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, color: Color(0xFF3D3D3D))),
+                    const SizedBox(height: 4),
+                    Text('PNG, JPG supported',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
                   ],
                 ),
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Описание
-            _buildLabel('Description'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('Describe your outfit...'),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Тагове
-            _buildLabel('Tag clothing items'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _tagsController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('e.g. white sweater, black jeans, sneakers'),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Категория
-            _buildLabel('Style category'),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2D2D44),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedCategory,
-                  isExpanded: true,
-                  dropdownColor: const Color(0xFF2D2D44),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                  items: _categories.map((cat) {
-                    return DropdownMenuItem(value: cat, child: Text(cat));
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedCategory = val!),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 36),
-
-            // Бутон Публикуване
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE8D5B7),
-                  foregroundColor: const Color(0xFF1A1A2E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  if (_descriptionController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please add a description')),
-                    );
-                    return;
-                  }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Outfit published! 🎉')),
-                  );
-                  // Отиваме към Home
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
-                child: const Text(
-                  'Publish Outfit',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-
+            const SizedBox(height: 28),
+            const Text('Category',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF3D3D3D))),
             const SizedBox(height: 12),
-
-            // Бутон Отказ
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: _categories.map((cat) {
+                final selected = _selectedCategory == cat;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedCategory = cat),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFF8DAA81) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selected ? const Color(0xFF8DAA81) : Colors.grey.shade200,
+                      ),
+                    ),
+                    child: Text(
+                      cat,
+                      style: TextStyle(
+                        color: selected ? Colors.white : Colors.grey.shade600,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 28),
+            const Text('Notes (optional)',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF3D3D3D))),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: TextField(
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'e.g. "Works great with beige trousers"',
+                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
-              height: 52,
-              child: TextButton(
+              child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: Color(0xFF888888), fontSize: 16),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8DAA81),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
                 ),
+                child: const Text('Save to Closet',
+                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  // Помощен метод: заглавие на поле
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFFE8D5B7),
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // Помощен метод: декорация за TextField
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF555555)),
-      filled: true,
-      fillColor: const Color(0xFF2D2D44),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }

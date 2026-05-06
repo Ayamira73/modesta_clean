@@ -1,23 +1,16 @@
 import 'package:flutter/material.dart';
 
 class OutfitCard extends StatelessWidget {
-  final String user;
-  final String label;
-  final Color color;
-  final bool liked;
-  final VoidCallback onLike;
+  final Map<String, dynamic> outfit;
 
-  const OutfitCard({
-    super.key,
-    required this.user,
-    required this.label,
-    required this.color,
-    required this.liked,
-    required this.onLike,
-  });
+  const OutfitCard({super.key, required this.outfit});
 
   @override
   Widget build(BuildContext context) {
+    final Color color = outfit['color'] as Color;
+    final String user = outfit['user'] as String;
+    final String desc = outfit['desc'] as String;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -33,57 +26,35 @@ class OutfitCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image area
+          // Image placeholder
           Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: color,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
-              child: Center(
-                child: Icon(
-                  Icons.checkroom,
-                  color: color.computeLuminance() > 0.5
-                      ? Colors.white.withOpacity(0.6)
-                      : Colors.white,
-                  size: 48,
-                ),
+              child: const Center(
+                child: Icon(Icons.checkroom, color: Colors.white70, size: 48),
               ),
             ),
           ),
-          // Info
+          // User + description
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF3D3D3D),
-                      ),
-                    ),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-                GestureDetector(
-                  onTap: onLike,
-                  child: Icon(
-                    liked ? Icons.favorite : Icons.favorite_border,
-                    color: liked ? Colors.pinkAccent : Colors.grey.shade400,
-                    size: 18,
+                Text(
+                  user,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3D3D3D),
                   ),
+                ),
+                Text(
+                  desc,
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                 ),
               ],
             ),

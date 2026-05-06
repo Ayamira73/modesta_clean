@@ -12,12 +12,12 @@ class _SearchScreenState extends State<SearchScreen> {
   String _query = '';
 
   final List<Map<String, dynamic>> _trending = [
-    {'tag': 'Minimal Beige', 'color': Color(0xFFEDE3D5), 'count': '2.3k'},
-    {'tag': 'Street Luxe', 'color': Color(0xFFE8DDD0), 'count': '1.8k'},
-    {'tag': 'Soft Girl', 'color': Color(0xFFD9D4E7), 'count': '3.1k'},
+    {'tag': 'Minimal Beige',   'color': Color(0xFFEDE3D5), 'count': '2.3k'},
+    {'tag': 'Street Luxe',     'color': Color(0xFFE8DDD0), 'count': '1.8k'},
+    {'tag': 'Soft Girl',       'color': Color(0xFFD9D4E7), 'count': '3.1k'},
     {'tag': 'Business Casual', 'color': Color(0xFFCDD9E5), 'count': '1.2k'},
-    {'tag': 'Cottagecore', 'color': Color(0xFFD6E4CF), 'count': '4.5k'},
-    {'tag': 'Dark Academia', 'color': Color(0xFFD5CDBF), 'count': '2.9k'},
+    {'tag': 'Cottagecore',     'color': Color(0xFFD6E4CF), 'count': '4.5k'},
+    {'tag': 'Dark Academia',   'color': Color(0xFFD5CDBF), 'count': '2.9k'},
   ];
 
   @override
@@ -32,7 +32,6 @@ class _SearchScreenState extends State<SearchScreen> {
             const Text(
               'Discover',
               style: TextStyle(
-                fontFamily: 'Georgia',
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF3D3D3D),
@@ -112,10 +111,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         Text(
                           '${_trending[i]['count']} outfits',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                         ),
                       ],
                     ),

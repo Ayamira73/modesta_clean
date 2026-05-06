@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 
-// Екран 5: Качване на аутфит
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
 
@@ -20,32 +18,36 @@ class _UploadScreenState extends State<UploadScreen> {
   ];
 
   @override
+  void dispose() {
+    _descriptionController.dispose();
+    _tagsController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFFF9F5EB),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12122A),
+        backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'Share Your Outfit',
-          style: TextStyle(color: Color(0xFFE8D5B7), fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF3D3D3D), fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Color(0xFFE8D5B7)),
+          icon: const Icon(Icons.close, color: Color(0xFF3D3D3D)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Зона за качване на снимка
+            // Photo upload area
             GestureDetector(
               onTap: () {
-                // В реалното приложение тук се отваря галерията
                 setState(() => _photoAdded = true);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Opening gallery...')),
@@ -53,14 +55,14 @@ class _UploadScreenState extends State<UploadScreen> {
               },
               child: Container(
                 width: double.infinity,
-                height: 220,
+                height: 200,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2D2D44),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: _photoAdded
-                        ? const Color(0xFFE8D5B7)
-                        : const Color(0xFF444466),
+                        ? const Color(0xFF8DAA81)
+                        : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
@@ -69,19 +71,15 @@ class _UploadScreenState extends State<UploadScreen> {
                   children: [
                     Icon(
                       _photoAdded ? Icons.check_circle : Icons.add_photo_alternate_outlined,
-                      size: 56,
-                      color: _photoAdded
-                          ? const Color(0xFFE8D5B7)
-                          : const Color(0xFF666688),
+                      size: 52,
+                      color: _photoAdded ? const Color(0xFF8DAA81) : Colors.grey.shade400,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Text(
                       _photoAdded ? 'Photo added!' : 'Tap to add photo',
                       style: TextStyle(
-                        color: _photoAdded
-                            ? const Color(0xFFE8D5B7)
-                            : const Color(0xFF888888),
-                        fontSize: 16,
+                        color: _photoAdded ? const Color(0xFF8DAA81) : Colors.grey.shade500,
+                        fontSize: 15,
                       ),
                     ),
                   ],
@@ -91,44 +89,44 @@ class _UploadScreenState extends State<UploadScreen> {
 
             const SizedBox(height: 24),
 
-            // Описание
-            _buildLabel('Description'),
+            // Description
+            const Text('Description',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF3D3D3D))),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
               maxLines: 3,
-              style: const TextStyle(color: Colors.white),
               decoration: _inputDecoration('Describe your outfit...'),
             ),
 
             const SizedBox(height: 20),
 
-            // Тагове
-            _buildLabel('Tag clothing items'),
+            // Tags
+            const Text('Tag clothing items',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF3D3D3D))),
             const SizedBox(height: 8),
             TextField(
               controller: _tagsController,
-              style: const TextStyle(color: Colors.white),
               decoration: _inputDecoration('e.g. white sweater, black jeans, sneakers'),
             ),
 
             const SizedBox(height: 20),
 
-            // Категория
-            _buildLabel('Style category'),
+            // Category dropdown
+            const Text('Style category',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF3D3D3D))),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF2D2D44),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedCategory,
                   isExpanded: true,
-                  dropdownColor: const Color(0xFF2D2D44),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
                   items: _categories.map((cat) {
                     return DropdownMenuItem(value: cat, child: Text(cat));
                   }).toList(),
@@ -139,17 +137,15 @@ class _UploadScreenState extends State<UploadScreen> {
 
             const SizedBox(height: 36),
 
-            // Бутон Публикуване
+            // Publish button
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: 52,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE8D5B7),
-                  foregroundColor: const Color(0xFF1A1A2E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  backgroundColor: const Color(0xFF8DAA81),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
                   if (_descriptionController.text.isEmpty) {
@@ -161,30 +157,26 @@ class _UploadScreenState extends State<UploadScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Outfit published! 🎉')),
                   );
-                  // Отиваме към Home
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
+                  Navigator.pop(context);
                 },
                 child: const Text(
                   'Publish Outfit',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
 
             const SizedBox(height: 12),
 
-            // Бутон Отказ
+            // Cancel button
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 48,
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text(
                   'Cancel',
-                  style: TextStyle(color: Color(0xFF888888), fontSize: 16),
+                  style: TextStyle(color: Colors.grey, fontSize: 15),
                 ),
               ),
             ),
@@ -194,28 +186,23 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  // Помощен метод: заглавие на поле
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFFE8D5B7),
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // Помощен метод: декорация за TextField
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF555555)),
+      hintStyle: TextStyle(color: Colors.grey.shade400),
       filled: true,
-      fillColor: const Color(0xFF2D2D44),
+      fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF8DAA81)),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );

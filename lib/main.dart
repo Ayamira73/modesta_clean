@@ -12,10 +12,10 @@ class ModestaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Modesta',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // Farbpalette
-        scaffoldBackgroundColor: const Color(0xFFF9F5EB), // Beige
-        primaryColor: const Color(0xFF8DAA81),           // Pistazien-Grün
+        scaffoldBackgroundColor: const Color(0xFFF9F5EB),
+        primaryColor: const Color(0xFF8DAA81),
       ),
       home: const SplashScreen(),
     );

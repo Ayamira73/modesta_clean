@@ -19,7 +19,13 @@ class _QuizScreenState extends State<QuizScreen> {
     {
       'question': 'What is your body shape?',
       'subtitle': 'We\'ll suggest outfits that flatter your figure.',
-      'options': ['Hourglass', 'Pear', 'Apple', 'Rectangle', 'Inverted Triangle'],
+      'options': [
+        'Hourglass',
+        'Pear',
+        'Apple',
+        'Rectangle',
+        'Inverted Triangle'
+      ],
       'icons': [
         Icons.accessibility_new,
         Icons.woman,
@@ -41,24 +47,34 @@ class _QuizScreenState extends State<QuizScreen> {
         Icons.circle,
       ],
       'colors': [
-        Color(0xFFF9DCC4),
-        Color(0xFFF1C27D),
-        Color(0xFFE0AC69),
-        Color(0xFFC68642),
-        Color(0xFF8D5524),
-        Color(0xFF4A2912),
+        const Color(0xFFF9DCC4),
+        const Color(0xFFF1C27D),
+        const Color(0xFFE0AC69),
+        const Color(0xFFC68642),
+        const Color(0xFF8D5524),
+        const Color(0xFF4A2912),
       ],
     },
     {
       'question': 'What\'s your style personality?',
       'subtitle': 'Pick the vibe that feels most like you.',
-      'options': ['Casual & Comfy', 'Elegant & Classy', 'Streetwear', 'Trendy & Bold'],
+      'options': [
+        'Casual & Comfy',
+        'Elegant & Classy',
+        'Streetwear',
+        'Trendy & Bold'
+      ],
       'icons': [Icons.weekend, Icons.star, Icons.directions_walk, Icons.bolt],
     },
     {
       'question': 'Favourite colour palette?',
       'subtitle': 'This helps us filter your outfit feed.',
-      'options': ['Neutrals & Beige', 'Pastels', 'Monochrome', 'Bright & Vivid'],
+      'options': [
+        'Neutrals & Beige',
+        'Pastels',
+        'Monochrome',
+        'Bright & Vivid'
+      ],
       'icons': [Icons.circle, Icons.color_lens, Icons.contrast, Icons.palette],
     },
     {
@@ -92,27 +108,28 @@ class _QuizScreenState extends State<QuizScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.checkroom, size: 56, color: Color(0xFF8DAA81)),
+            const Icon(Icons.checkroom, size: 56, color: Color(0xFFA47551)),
             const SizedBox(height: 16),
             const Text(
               'Your Style Profile',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF3D3D3D),
+                color: Color(0xFF3A2A1F),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'You\'re a ${_answers['q2'] ?? 'Stylish'} type with a love for ${_answers['q3'] ?? 'beautiful'} tones — dressed for ${_answers['q4'] ?? 'every occasion'}.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.6),
+              style: TextStyle(
+                  fontSize: 13, color: Colors.grey.shade600, height: 1.6),
             ),
             const SizedBox(height: 6),
             Text(
               'Body shape: ${_answers['q0'] ?? '-'}  •  Skin tone: ${_answers['q1'] ?? '-'}',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF8DAA81)),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF8FAE8B)),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -124,11 +141,11 @@ class _QuizScreenState extends State<QuizScreen> {
                   // await prefs.setBool('quiz_done', true);
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const HomeScreen()),
-                        (route) => false,
+                    (route) => false,
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8DAA81),
+                  backgroundColor: const Color(0xFFA47551),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -158,7 +175,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final List<String> options = List<String>.from(q['options']);
     final List<IconData> icons = List<IconData>.from(q['icons']);
     final List<Color>? colors =
-    q['colors'] != null ? List<Color>.from(q['colors']) : null;
+        q['colors'] != null ? List<Color>.from(q['colors']) : null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F5EB),
@@ -168,10 +185,10 @@ class _QuizScreenState extends State<QuizScreen> {
         // No close button — quiz is mandatory on first launch
         leading: _step > 0
             ? IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: Color(0xFF3D3D3D)),
-          onPressed: () => setState(() => _step--),
-        )
+                icon: const Icon(Icons.arrow_back_ios_rounded,
+                    color: Color(0xFF3A2A1F)),
+                onPressed: () => setState(() => _step--),
+              )
             : const SizedBox(),
       ),
       body: Padding(
@@ -188,7 +205,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: i <= _step
-                          ? const Color(0xFF8DAA81)
+                          ? const Color(0xFFA47551)
                           : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(2),
                     ),
@@ -207,7 +224,7 @@ class _QuizScreenState extends State<QuizScreen> {
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF3D3D3D),
+                color: Color(0xFF3A2A1F),
                 height: 1.3,
               ),
             ),
@@ -235,7 +252,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 6,
                           ),
                         ],
@@ -245,26 +262,26 @@ class _QuizScreenState extends State<QuizScreen> {
                           // Skin tone: coloured circle. Other questions: icon.
                           colors != null
                               ? Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: colors[i],
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.grey.shade300,
-                                width: 1,
-                              ),
-                            ),
-                          )
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: colors[i],
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                      width: 1,
+                                    ),
+                                  ),
+                                )
                               : Icon(icons[i],
-                              color: const Color(0xFF8DAA81), size: 22),
+                                  color: const Color(0xFFA47551), size: 22),
                           const SizedBox(width: 14),
                           Text(
                             options[i],
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF3D3D3D),
+                              color: Color(0xFF3A2A1F),
                             ),
                           ),
                         ],

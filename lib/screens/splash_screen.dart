@@ -15,7 +15,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -31,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // final bool quizDone = prefs.getBool('quiz_done') ?? false;
 
     // --- Simple version (quiz shows every time, change to true to skip) ---
-    const bool quizDone = false;
+    final bool quizDone = _quizDonePlaceholder();
 
     if (!mounted) return;
 
@@ -40,6 +39,10 @@ class _SplashScreenState extends State<SplashScreen> {
         builder: (_) => quizDone ? const HomeScreen() : const QuizScreen(),
       ),
     );
+  }
+
+  bool _quizDonePlaceholder() {
+    return false;
   }
 
   @override
@@ -55,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF8DAA81),
+                color: const Color(0xFFA47551),
                 borderRadius: BorderRadius.circular(28),
               ),
               child: const Icon(
@@ -70,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF3D3D3D),
+                color: Color(0xFF3A2A1F),
                 letterSpacing: 2,
               ),
             ),
@@ -79,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
               'Your personal style assistant',
               style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF8DAA81),
+                color: Color(0xFFA47551),
               ),
             ),
           ],

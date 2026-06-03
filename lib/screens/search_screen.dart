@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import '../widgets/outfit_card.dart';
+
+const Color _card = Color(0xFFFFFDF7);
+const Color _text = Color(0xFF3A2A1F);
+const Color _brown = Color(0xFFA47551);
+const Color _beige = Color(0xFFE8DCC8);
+const Color _sage = Color(0xFF8FAE8B);
+const Color _muted = Color(0xFF8C7A6B);
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -10,116 +18,198 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
+  String _filter = 'Category';
 
-  final List<Map<String, dynamic>> _trending = [
-    {'tag': 'Minimal Beige',   'color': Color(0xFFEDE3D5), 'count': '2.3k'},
-    {'tag': 'Street Luxe',     'color': Color(0xFFE8DDD0), 'count': '1.8k'},
-    {'tag': 'Soft Girl',       'color': Color(0xFFD9D4E7), 'count': '3.1k'},
-    {'tag': 'Business Casual', 'color': Color(0xFFCDD9E5), 'count': '1.2k'},
-    {'tag': 'Cottagecore',     'color': Color(0xFFD6E4CF), 'count': '4.5k'},
-    {'tag': 'Dark Academia',   'color': Color(0xFFD5CDBF), 'count': '2.9k'},
+  final List<String> _filters = const ['Category', 'Color', 'Season', 'Style'];
+
+  final List<Map<String, dynamic>> _results = const [
+    {
+      'title': 'Cream blazer capsule',
+      'user': '@modesta.edit',
+      'color': Color(0xFFE8DCC8),
+      'tags': ['workwear', 'cream'],
+      'likes': '7.8k',
+    },
+    {
+      'title': 'Sage scarf styling',
+      'user': '@lena.style',
+      'color': Color(0xFFD6E4CF),
+      'tags': ['sage', 'minimal'],
+      'likes': '4.1k',
+    },
+    {
+      'title': 'Camel dinner look',
+      'user': '@mira.looks',
+      'color': Color(0xFFD9C8AE),
+      'tags': ['camel', 'evening'],
+      'likes': '9.4k',
+    },
+    {
+      'title': 'Ivory weekend set',
+      'user': '@sofia.style',
+      'color': Color(0xFFFFFDF7),
+      'tags': ['casual', 'ivory'],
+      'likes': '6.6k',
+    },
   ];
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              'Discover',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF3D3D3D),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Search bar
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchCtrl,
-                onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Search styles, trends...',
-                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF8DAA81)),
-                  suffixIcon: _query.isNotEmpty
-                      ? IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      setState(() => _query = '');
-                    },
-                  )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+      top: false,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: _card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _beige),
+              boxShadow: [
+                BoxShadow(
+                  color: _brown.withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
                 ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _query = v),
+              style: const TextStyle(color: _text),
+              decoration: InputDecoration(
+                hintText: 'Search outfits, creators, colors...',
+                hintStyle: const TextStyle(color: _muted, fontSize: 13),
+                prefixIcon: const Icon(Icons.search_rounded, color: _brown),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: _muted, size: 18),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 15),
               ),
             ),
-            const SizedBox(height: 28),
-            const Text(
-              'Trending Now 🔥',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF3D3D3D),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.2,
-                ),
-                itemCount: _trending.length,
-                itemBuilder: (context, i) {
-                  return Container(
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 42,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _filters.length,
+              itemBuilder: (context, index) {
+                final filter = _filters[index];
+                final selected = filter == _filter;
+                return GestureDetector(
+                  onTap: () => setState(() => _filter = filter),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 9),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     decoration: BoxDecoration(
-                      color: _trending[i]['color'],
-                      borderRadius: BorderRadius.circular(16),
+                      color: selected ? _brown : _card,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: _beige),
                     ),
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          _trending[i]['tag'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: Color(0xFF3D3D3D),
-                          ),
+                    child: Center(
+                      child: Text(
+                        filter,
+                        style: TextStyle(
+                          color: selected ? _card : _text,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
                         ),
-                        Text(
-                          '${_trending[i]['count']} outfits',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                        ),
-                      ],
+                      ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          ],
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Recommended results',
+            style: TextStyle(
+              color: _text,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Filtered by category, color, season, and style preference.',
+            style: TextStyle(color: _muted, fontSize: 12),
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.72,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _results.length,
+            itemBuilder: (context, index) =>
+                OutfitCard(outfit: _results[index]),
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Popular filters',
+            style: TextStyle(
+              color: _text,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FilterPill(label: 'Autumn neutrals'),
+              _FilterPill(label: 'Modest evening'),
+              _FilterPill(label: 'Office capsule'),
+              _FilterPill(label: 'Sage accessories'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+      decoration: BoxDecoration(
+        color: _sage.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: _sage.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: _text,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

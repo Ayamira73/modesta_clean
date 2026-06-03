@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "288563352164",
+    "project_id": "modesta-clean",
+    "storage_bucket": "modesta-clean.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288563352164:android:d6cb48357c02dd20284571",
+        "android_client_info": {
+          "package_name": "com.example.modesta_clean"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCARv_Ui9yACOZ5xFZtyIXFClG5d7b3DqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

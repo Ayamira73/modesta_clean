@@ -12,7 +12,12 @@
           "package_name": "com.example.modesta_clean"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "288563352164-3i2bnj6pofe9034dc108shqv6cqpdgo1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCARv_Ui9yACOZ5xFZtyIXFClG5d7b3DqA"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "288563352164-3i2bnj6pofe9034dc108shqv6cqpdgo1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "288563352164-hbq7cekm9ntif950b598u1uktr8duj50.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.modestaClean"
+              }
+            }
+          ]
         }
       }
     }

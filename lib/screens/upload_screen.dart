@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 
 const Color _bg = Color(0xFFF9F5EB);
 const Color _card = Color(0xFFFFFDF7);
@@ -19,11 +25,16 @@ class UploadScreen extends StatefulWidget {
 class _UploadScreenState extends State<UploadScreen> {
   final TextEditingController _captionController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
   String _selectedCategory = 'Elegant';
   String _selectedColor = 'Ivory';
   String _selectedSeason = 'Autumn';
-  bool _photoAdded = false;
   bool _saveToWardrobe = true;
+  bool _isPublishing = false;
+  String _uploadStatus = '';
+  XFile? _selectedImage;
+  String? _selectedImageName;
+  Uint8List? _selectedImageBytes;
 
   final List<String> _categories = const [
     'Elegant',
@@ -52,12 +63,145 @@ class _UploadScreenState extends State<UploadScreen> {
     _captionController.clear();
     _tagsController.clear();
     setState(() {
-      _photoAdded = false;
+      _selectedImage = null;
+      _selectedImageName = null;
+      _selectedImageBytes = null;
       _saveToWardrobe = true;
       _selectedCategory = 'Elegant';
       _selectedColor = 'Ivory';
       _selectedSeason = 'Autumn';
     });
+  }
+
+  Future<User?> _ensureSignedInUser() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) return currentUser;
+
+    final credential = await FirebaseAuth.instance
+        .signInAnonymously()
+        .timeout(const Duration(seconds: 15));
+    return credential.user;
+  }
+
+  String _friendlyUploadError(Object error) {
+    if (error is TimeoutException) {
+      return 'Firebase timed out while: $_uploadStatus. Check Firestore rules and Anonymous Auth.';
+    }
+
+    if (error is FirebaseException) {
+      if (error.code == 'unauthorized' || error.code == 'permission-denied') {
+        return 'Firebase rules blocked saving the post. Enable anonymous auth or allow authenticated users to write to Firestore.';
+      }
+      if (error.code == 'operation-not-allowed') {
+        return 'Anonymous sign-in is disabled in Firebase Authentication. Enable it or sign in before uploading.';
+      }
+      return '${error.plugin}: ${error.message ?? error.code}';
+    }
+
+    return error.toString();
+  }
+
+  Future<void> _pickPhoto() async {
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1600,
+      );
+
+      if (image == null) return;
+      final imageBytes = await image.readAsBytes();
+
+      setState(() {
+        _selectedImage = image;
+        _selectedImageName = image.name;
+        _selectedImageBytes = imageBytes;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open gallery: $error')),
+      );
+    }
+  }
+
+  Future<void> _publishPost() async {
+    final caption = _captionController.text.trim();
+
+    if (caption.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add a caption first.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isPublishing = true;
+      _uploadStatus = 'Preparing upload...';
+    });
+
+    try {
+      setState(() => _uploadStatus = 'Signing in...');
+      final user = await _ensureSignedInUser();
+      final uid = user?.uid ?? 'guest_user';
+
+      final tags = _tagsController.text
+          .split(',')
+          .map((tag) => tag.trim())
+          .where((tag) => tag.isNotEmpty)
+          .toList();
+
+      final postData = {
+        'caption': caption,
+        'category': _selectedCategory,
+        'color': _selectedColor,
+        'season': _selectedSeason,
+        'tags': tags,
+        'imageUrl': null,
+        'localImageName': _selectedImageName,
+        'imageUploadPending': _selectedImage != null,
+        'userId': uid,
+        'saveToWardrobe': _saveToWardrobe,
+        'likesCount': 0,
+        'commentsCount': 0,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      setState(() => _uploadStatus = 'Saving post...');
+      final postRef = await FirebaseFirestore.instance
+          .collection('outfit_posts')
+          .add(postData)
+          .timeout(const Duration(seconds: 20));
+
+      if (_saveToWardrobe) {
+        setState(() => _uploadStatus = 'Saving to wardrobe...');
+        await FirebaseFirestore.instance.collection('wardrobe_items').add({
+          ...postData,
+          'postId': postRef.id,
+        }).timeout(const Duration(seconds: 20));
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Post saved to Firestore.')),
+      );
+      _clearForm();
+      if (!widget.isEmbedded) Navigator.pop(context);
+    } catch (error) {
+      debugPrint('Modesta upload failed at "$_uploadStatus": $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Upload failed: ${_friendlyUploadError(error)}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPublishing = false;
+          _uploadStatus = '';
+        });
+      }
+    }
   }
 
   @override
@@ -73,204 +217,283 @@ class _UploadScreenState extends State<UploadScreen> {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 26),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _card,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _beige),
-              boxShadow: [
-                BoxShadow(
-                  color: _brown.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Create a fashion post',
-                  style: TextStyle(
-                    color: _text,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Upload a look, tag the mood, and save it to your wardrobe.',
-                  style: TextStyle(color: _muted, fontSize: 12, height: 1.4),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () {
-                    setState(() => _photoAdded = true);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Opening gallery...')),
-                    );
-                  },
-                  child: Container(
-                    height: 230,
-                    decoration: BoxDecoration(
-                      color: _photoAdded ? const Color(0xFFE8DCC8) : _bg,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: _photoAdded ? _brown : _beige,
-                        width: 1.4,
-                      ),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 820),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 26),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: _card,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: _beige),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _brown.withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
                     ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _photoAdded
-                                ? Icons.check_circle_rounded
-                                : Icons.add_photo_alternate_outlined,
-                            size: 54,
-                            color: _photoAdded ? _brown : _muted,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _photoAdded
-                                ? 'Photo selected'
-                                : 'Upload outfit photo',
-                            style: const TextStyle(
-                              color: _text,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 18),
-                const _Label('Caption'),
-                TextField(
-                  controller: _captionController,
-                  maxLines: 3,
-                  style: const TextStyle(color: _text),
-                  decoration: _inputDecoration(
-                      'Describe the styling, occasion, and pieces...'),
-                ),
-                const SizedBox(height: 16),
-                const _Label('Style tags'),
-                TextField(
-                  controller: _tagsController,
-                  style: const TextStyle(color: _text),
-                  decoration: _inputDecoration('e.g. ivory, modest, workwear'),
-                ),
-                const SizedBox(height: 16),
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _DropdownField(
-                        label: 'Category',
-                        value: _selectedCategory,
-                        items: _categories,
-                        onChanged: (value) =>
-                            setState(() => _selectedCategory = value),
+                    const Text(
+                      'Create a fashion post',
+                      style: TextStyle(
+                        color: _text,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _DropdownField(
-                        label: 'Color',
-                        value: _selectedColor,
-                        items: _colors,
-                        onChanged: (value) =>
-                            setState(() => _selectedColor = value),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Create a post now. Images use placeholders until Storage is enabled.',
+                      style:
+                          TextStyle(color: _muted, fontSize: 12, height: 1.4),
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: _isPublishing ? null : _pickPhoto,
+                      child: Container(
+                        height: _selectedImageBytes == null ? 230 : 320,
+                        decoration: BoxDecoration(
+                          color: _selectedImage != null
+                              ? const Color(0xFFE8DCC8)
+                              : _bg,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: _selectedImage != null ? _brown : _beige,
+                            width: 1.4,
+                          ),
+                        ),
+                        child: _selectedImageBytes == null
+                            ? const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.add_photo_alternate_outlined,
+                                      size: 54,
+                                      color: _muted,
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Add optional outfit photo',
+                                      style: TextStyle(
+                                        color: _text,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 6),
+                                    Text(
+                                      'Saved as a local preview until Storage is enabled',
+                                      style: TextStyle(
+                                        color: _muted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.memory(
+                                      _selectedImageBytes!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 14,
+                                    right: 14,
+                                    bottom: 14,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 11,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _card.withValues(alpha: 0.88),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(color: _beige),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.check_circle_rounded,
+                                            color: _brown,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              '${_selectedImageName ?? 'Photo'} - local preview',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: _text,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Change',
+                                            style: TextStyle(
+                                              color: _brown,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const _Label('Caption'),
+                    TextField(
+                      controller: _captionController,
+                      maxLines: 3,
+                      style: const TextStyle(color: _text),
+                      decoration: _inputDecoration(
+                          'Describe the styling, occasion, and pieces...'),
+                    ),
+                    const SizedBox(height: 16),
+                    const _Label('Style tags'),
+                    TextField(
+                      controller: _tagsController,
+                      style: const TextStyle(color: _text),
+                      decoration:
+                          _inputDecoration('e.g. ivory, modest, workwear'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DropdownField(
+                            label: 'Category',
+                            value: _selectedCategory,
+                            items: _categories,
+                            onChanged: (value) =>
+                                setState(() => _selectedCategory = value),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _DropdownField(
+                            label: 'Color',
+                            value: _selectedColor,
+                            items: _colors,
+                            onChanged: (value) =>
+                                setState(() => _selectedColor = value),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _DropdownField(
+                      label: 'Season',
+                      value: _selectedSeason,
+                      items: _seasons,
+                      onChanged: (value) =>
+                          setState(() => _selectedSeason = value),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      value: _saveToWardrobe,
+                      onChanged: (value) =>
+                          setState(() => _saveToWardrobe = value),
+                      contentPadding: EdgeInsets.zero,
+                      activeThumbColor: _brown,
+                      title: const Text(
+                        'Save to wardrobe',
+                        style: TextStyle(
+                            color: _text, fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: const Text(
+                        'Keep this outfit in your private wardrobe grid.',
+                        style: TextStyle(color: _muted, fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _brown,
+                          foregroundColor: _card,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _isPublishing ? null : _publishPost,
+                        child: _isPublishing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _card,
+                                ),
+                              )
+                            : const Text(
+                                'Publish Post',
+                                style: TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.w900),
+                              ),
+                      ),
+                    ),
+                    if (_isPublishing && _uploadStatus.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Text(
+                          _uploadStatus,
+                          style: const TextStyle(
+                            color: _muted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _brown,
+                          side: const BorderSide(color: _beige),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _isPublishing ? null : _clearForm,
+                        child: const Text(
+                          'Save Draft to Wardrobe',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _DropdownField(
-                  label: 'Season',
-                  value: _selectedSeason,
-                  items: _seasons,
-                  onChanged: (value) => setState(() => _selectedSeason = value),
-                ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  value: _saveToWardrobe,
-                  onChanged: (value) => setState(() => _saveToWardrobe = value),
-                  contentPadding: EdgeInsets.zero,
-                  activeThumbColor: _brown,
-                  title: const Text(
-                    'Save to wardrobe',
-                    style: TextStyle(color: _text, fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: const Text(
-                    'Keep this outfit in your private wardrobe grid.',
-                    style: TextStyle(color: _muted, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _brown,
-                      foregroundColor: _card,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (!_photoAdded ||
-                          _captionController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Add a photo and caption first.'),
-                          ),
-                        );
-                        return;
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Post published.')),
-                      );
-                      _clearForm();
-                      if (!widget.isEmbedded) Navigator.pop(context);
-                    },
-                    child: const Text(
-                      'Publish Post',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _brown,
-                      side: const BorderSide(color: _beige),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: _clearForm,
-                    child: const Text(
-                      'Save Draft to Wardrobe',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

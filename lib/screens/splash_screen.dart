@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 import 'quiz_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -19,20 +18,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
 
-    // --- Simple version (quiz shows every time, change to true to skip) ---
-    const bool quizDone = false;
-
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => quizDone ? const HomeScreen() : const QuizScreen(),
+        builder: (_) => const QuizScreen(),
       ),
     );
-  }
-
-  bool _quizDonePlaceholder() {
-    return false;
   }
 
   @override

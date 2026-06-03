@@ -64,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '288563352164',
     projectId: 'modesta-clean',
     storageBucket: 'modesta-clean.firebasestorage.app',
+    iosClientId: '288563352164-hbq7cekm9ntif950b598u1uktr8duj50.apps.googleusercontent.com',
     iosBundleId: 'com.example.modestaClean',
   );
 
@@ -73,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '288563352164',
     projectId: 'modesta-clean',
     storageBucket: 'modesta-clean.firebasestorage.app',
+    iosClientId: '288563352164-hbq7cekm9ntif950b598u1uktr8duj50.apps.googleusercontent.com',
     iosBundleId: 'com.example.modestaClean',
   );
 
@@ -85,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'modesta-clean.firebasestorage.app',
     measurementId: 'G-MPCZ2XV1KV',
   );
+
 }

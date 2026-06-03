@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../widgets/outfit_card.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
@@ -77,6 +79,64 @@ class _HomeScreenState extends State<HomeScreen> {
       'likes': '4.7k',
     },
   ];
+
+  Stream<List<Map<String, dynamic>>> _firebasePostsStream() {
+    return FirebaseFirestore.instance
+        .collection('outfit_posts')
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(_postFromDoc).toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> _firebaseWardrobeStream() {
+    return FirebaseFirestore.instance
+        .collection('wardrobe_items')
+        .orderBy('createdAt', descending: true)
+        .limit(30)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(_outfitFromDoc).toList());
+  }
+
+  Map<String, dynamic> _postFromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final caption = data['caption'] as String? ?? 'New Modesta outfit';
+    final tags = List<String>.from(data['tags'] ?? const []);
+
+    return {
+      'id': doc.id,
+      'user': 'Modesta Creator',
+      'handle': '@modesta.user',
+      'avatar': const Color(0xFFE8DCC8),
+      'image': const Color(0xFFE8DCC8),
+      'imageUrl': data['imageUrl'],
+      'title': caption,
+      'desc':
+          '${data['category'] ?? 'Outfit'} • ${data['color'] ?? 'Neutral'} • ${data['season'] ?? 'Seasonal'}',
+      'tags': tags.isEmpty ? ['modesta', 'outfit'] : tags,
+      'likes': '${data['likesCount'] ?? 0}',
+      'comments': '${data['commentsCount'] ?? 0}',
+    };
+  }
+
+  Map<String, dynamic> _outfitFromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final tags = List<String>.from(data['tags'] ?? const []);
+
+    return {
+      'id': doc.id,
+      'title': data['caption'] ?? 'Saved outfit',
+      'user': '@modesta.user',
+      'color': const Color(0xFFE8DCC8),
+      'imageUrl': data['imageUrl'],
+      'tags': tags.isEmpty ? ['saved', 'wardrobe'] : tags,
+      'likes': '${data['likesCount'] ?? 0}',
+    };
+  }
 
   void _showNotifications() {
     showModalBottomSheet(
@@ -223,10 +283,31 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _HomeFeed(posts: _posts, featured: _featured),
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _firebasePostsStream(),
+            builder: (context, snapshot) {
+              final firebasePosts = snapshot.data ?? const [];
+              final posts = firebasePosts.isEmpty ? _posts : firebasePosts;
+
+              return _HomeFeed(
+                posts: posts,
+                featured: _featured,
+                firebaseError: snapshot.hasError ? snapshot.error : null,
+              );
+            },
+          ),
           const SearchScreen(),
           const UploadScreen(isEmbedded: true),
-          _FavoritesScreen(outfits: _featured),
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _firebaseWardrobeStream(),
+            builder: (context, snapshot) {
+              final firebaseOutfits = snapshot.data ?? const [];
+              return _FavoritesScreen(
+                outfits: firebaseOutfits.isEmpty ? _featured : firebaseOutfits,
+                firebaseError: snapshot.hasError ? snapshot.error : null,
+              );
+            },
+          ),
           const ProfileScreen(),
         ],
       ),
@@ -271,10 +352,15 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeFeed extends StatelessWidget {
-  const _HomeFeed({required this.posts, required this.featured});
+  const _HomeFeed({
+    required this.posts,
+    required this.featured,
+    this.firebaseError,
+  });
 
   final List<Map<String, dynamic>> posts;
   final List<Map<String, dynamic>> featured;
+  final Object? firebaseError;
 
   @override
   Widget build(BuildContext context) {
@@ -327,6 +413,10 @@ class _HomeFeed extends StatelessWidget {
             ],
           ),
         ),
+        if (firebaseError != null) ...[
+          const SizedBox(height: 12),
+          _FirebaseNotice(error: firebaseError!),
+        ],
         const SizedBox(height: 22),
         const _SectionTitle(title: 'Trending styles', action: 'This week'),
         const SizedBox(height: 12),
@@ -430,7 +520,11 @@ class _FashionPost extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: _FashionImage(color: post['image'] as Color, height: 285),
+            child: _PostImage(
+              imageUrl: post['imageUrl'] as String?,
+              color: post['image'] as Color,
+              height: 285,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
@@ -491,9 +585,10 @@ class _FashionPost extends StatelessWidget {
 }
 
 class _FavoritesScreen extends StatelessWidget {
-  const _FavoritesScreen({required this.outfits});
+  const _FavoritesScreen({required this.outfits, this.firebaseError});
 
   final List<Map<String, dynamic>> outfits;
+  final Object? firebaseError;
 
   @override
   Widget build(BuildContext context) {
@@ -513,6 +608,10 @@ class _FavoritesScreen extends StatelessWidget {
           'A polished grid of outfit ideas you can revisit and style.',
           style: TextStyle(color: _muted, fontSize: 13),
         ),
+        if (firebaseError != null) ...[
+          const SizedBox(height: 12),
+          _FirebaseNotice(error: firebaseError!),
+        ],
         const SizedBox(height: 18),
         GridView.builder(
           shrinkWrap: true,
@@ -527,6 +626,74 @@ class _FavoritesScreen extends StatelessWidget {
           itemBuilder: (context, index) => OutfitCard(outfit: outfits[index]),
         ),
       ],
+    );
+  }
+}
+
+class _PostImage extends StatelessWidget {
+  const _PostImage({
+    required this.imageUrl,
+    required this.color,
+    required this.height,
+  });
+
+  final String? imageUrl;
+  final Color color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+
+    if (url == null || url.isEmpty) {
+      return _FashionImage(color: color, height: height);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Image.network(
+        url,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _FashionImage(color: color, height: height);
+        },
+      ),
+    );
+  }
+}
+
+class _FirebaseNotice extends StatelessWidget {
+  const _FirebaseNotice({required this.error});
+
+  final Object error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4E8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _beige),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, color: _brown, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Firebase data could not load. Showing demo content. $error',
+              style: const TextStyle(
+                color: _muted,
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -22,6 +22,7 @@ class OutfitCard extends StatelessWidget {
         'Curated outfit';
     final String user = outfit['user'] as String? ?? 'Modesta edit';
     final String likes = outfit['likes'] as String? ?? '4.8k';
+    final String? imageUrl = outfit['imageUrl'] as String?;
     final List<String> tags = List<String>.from(
       outfit['tags'] ?? outfit['pieces'] ?? const ['neutral', 'premium'],
     );
@@ -43,20 +44,39 @@ class OutfitCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
+            child: ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
               child: Stack(
                 children: [
-                  Center(
-                    child: Icon(
-                      Icons.checkroom_rounded,
-                      color: _card.withValues(alpha: 0.82),
-                      size: 50,
-                    ),
+                  Positioned.fill(
+                    child: imageUrl == null || imageUrl.isEmpty
+                        ? Container(
+                            color: color,
+                            child: Center(
+                              child: Icon(
+                                Icons.checkroom_rounded,
+                                color: _card.withValues(alpha: 0.82),
+                                size: 50,
+                              ),
+                            ),
+                          )
+                        : Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: color,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.checkroom_rounded,
+                                    color: _card.withValues(alpha: 0.82),
+                                    size: 50,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                   Positioned(
                     top: 10,

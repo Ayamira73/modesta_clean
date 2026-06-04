@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/splash_screen.dart';
 
@@ -44,6 +45,7 @@ class ModestaApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashScreen(),
+        '/login': (_) => const LoginScreen(),
         '/quiz': (_) => const QuizScreen(),
         '/home': (_) => const HomeScreen(),
       },

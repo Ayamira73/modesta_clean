@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../widgets/outfit_card.dart';
 import 'profile_screen.dart';
@@ -107,11 +110,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return {
       'id': doc.id,
-      'user': 'Modesta Creator',
-      'handle': '@modesta.user',
+      'user': data['userName'] ?? 'Modesta Creator',
+      'handle': data['userEmail'] ?? '@modesta.user',
       'avatar': const Color(0xFFE8DCC8),
+      'avatarUrl': data['userPhotoUrl'],
       'image': const Color(0xFFE8DCC8),
       'imageUrl': data['imageUrl'],
+      'imageBase64': data['imageBase64'],
       'title': caption,
       'desc':
           '${data['category'] ?? 'Outfit'} • ${data['color'] ?? 'Neutral'} • ${data['season'] ?? 'Seasonal'}',
@@ -268,13 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: GestureDetector(
+              child: _CurrentUserAvatar(
                 onTap: () => setState(() => _currentIndex = 4),
-                child: const CircleAvatar(
-                  radius: 18,
-                  backgroundColor: _beige,
-                  child: Icon(Icons.person_rounded, color: _brown, size: 20),
-                ),
               ),
             ),
           ],
@@ -347,6 +347,53 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CurrentUserAvatar extends StatelessWidget {
+  const _CurrentUserAvatar({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: const CircleAvatar(
+          radius: 18,
+          backgroundColor: _beige,
+          child: Icon(Icons.person_rounded, color: _brown, size: 20),
+        ),
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final imageBase64 =
+            snapshot.data?.data()?['profileImageBase64'] as String?;
+
+        return GestureDetector(
+          onTap: onTap,
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: _beige,
+            backgroundImage: imageBase64 == null
+                ? null
+                : MemoryImage(base64Decode(imageBase64)),
+            child: imageBase64 == null
+                ? const Icon(Icons.person_rounded, color: _brown, size: 20)
+                : null,
+          ),
+        );
+      },
     );
   }
 }
@@ -493,7 +540,12 @@ class _FashionPost extends StatelessWidget {
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: post['avatar'] as Color,
-                  child: const Icon(Icons.person_rounded, color: _brown),
+                  backgroundImage: post['avatarUrl'] is String
+                      ? NetworkImage(post['avatarUrl'] as String)
+                      : null,
+                  child: post['avatarUrl'] is String
+                      ? null
+                      : const Icon(Icons.person_rounded, color: _brown),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -520,11 +572,21 @@ class _FashionPost extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: _PostImage(
-              imageUrl: post['imageUrl'] as String?,
-              color: post['image'] as Color,
-              height: 285,
-            ),
+            child: post['imageBase64'] is String
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.memory(
+                      base64Decode(post['imageBase64'] as String),
+                      height: 285,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : _PostImage(
+                    imageUrl: post['imageUrl'] as String?,
+                    color: post['image'] as Color,
+                    height: 285,
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),

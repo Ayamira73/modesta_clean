@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -73,14 +74,14 @@ class _UploadScreenState extends State<UploadScreen> {
     });
   }
 
-  Future<User?> _ensureSignedInUser() async {
+  Future<User> _ensureSignedInUser() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) return currentUser;
 
-    final credential = await FirebaseAuth.instance
-        .signInAnonymously()
-        .timeout(const Duration(seconds: 15));
-    return credential.user;
+    throw FirebaseAuthException(
+      code: 'user-not-found',
+      message: 'Sign in before uploading a post.',
+    );
   }
 
   String _friendlyUploadError(Object error) {
@@ -105,8 +106,9 @@ class _UploadScreenState extends State<UploadScreen> {
     try {
       final image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85,
-        maxWidth: 1600,
+        imageQuality: 45,
+        maxWidth: 800,
+        maxHeight: 1000,
       );
 
       if (image == null) return;
@@ -141,9 +143,18 @@ class _UploadScreenState extends State<UploadScreen> {
     });
 
     try {
-      setState(() => _uploadStatus = 'Signing in...');
+      setState(() => _uploadStatus = 'Checking account...');
       final user = await _ensureSignedInUser();
-      final uid = user?.uid ?? 'guest_user';
+      final uid = user.uid;
+      String? imageBase64;
+
+      if (_selectedImageBytes != null) {
+        setState(() => _uploadStatus = 'Preparing photo...');
+        if (_selectedImageBytes!.length > 600000) {
+          throw Exception('Please choose a smaller image.');
+        }
+        imageBase64 = base64Encode(_selectedImageBytes!);
+      }
 
       final tags = _tagsController.text
           .split(',')
@@ -158,9 +169,13 @@ class _UploadScreenState extends State<UploadScreen> {
         'season': _selectedSeason,
         'tags': tags,
         'imageUrl': null,
+        'imageBase64': imageBase64,
         'localImageName': _selectedImageName,
-        'imageUploadPending': _selectedImage != null,
+        'imageUploadPending': false,
         'userId': uid,
+        'userName':
+            user.displayName ?? user.email?.split('@').first ?? 'Modesta User',
+        'userEmail': user.email,
         'saveToWardrobe': _saveToWardrobe,
         'likesCount': 0,
         'commentsCount': 0,
@@ -183,7 +198,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post saved to Firestore.')),
+        const SnackBar(content: Text('Your post was published.')),
       );
       _clearForm();
       if (!widget.isEmbedded) Navigator.pop(context);
@@ -251,7 +266,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Create a post now. Images use placeholders until Storage is enabled.',
+                      'Add a photo and details to share your outfit.',
                       style:
                           TextStyle(color: _muted, fontSize: 12, height: 1.4),
                     ),
@@ -282,7 +297,7 @@ class _UploadScreenState extends State<UploadScreen> {
                                     ),
                                     SizedBox(height: 10),
                                     Text(
-                                      'Add optional outfit photo',
+                                      'Add outfit photo',
                                       style: TextStyle(
                                         color: _text,
                                         fontWeight: FontWeight.w800,
@@ -290,7 +305,7 @@ class _UploadScreenState extends State<UploadScreen> {
                                     ),
                                     SizedBox(height: 6),
                                     Text(
-                                      'Saved as a local preview until Storage is enabled',
+                                      'Choose a photo from your gallery',
                                       style: TextStyle(
                                         color: _muted,
                                         fontSize: 12,
@@ -333,7 +348,7 @@ class _UploadScreenState extends State<UploadScreen> {
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              '${_selectedImageName ?? 'Photo'} - local preview',
+                                              _selectedImageName ?? 'Photo',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(

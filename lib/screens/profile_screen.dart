@@ -1,46 +1,129 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../widgets/outfit_card.dart';
+import 'package:image_picker/image_picker.dart';
 
 const Color _card = Color(0xFFFFFDF7);
 const Color _text = Color(0xFF3A2A1F);
 const Color _brown = Color(0xFFA47551);
 const Color _beige = Color(0xFFE8DCC8);
-const Color _sage = Color(0xFF8FAE8B);
 const Color _muted = Color(0xFF8C7A6B);
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const savedLooks = [
-      {
-        'title': 'Office soft layers',
-        'user': '@sofia.style',
-        'color': Color(0xFFE8DCC8),
-        'tags': ['office', 'camel'],
-        'likes': '3.2k',
-      },
-      {
-        'title': 'Ivory dinner look',
-        'user': '@sofia.style',
-        'color': Color(0xFFFFFDF7),
-        'tags': ['evening', 'ivory'],
-        'likes': '5.1k',
-      },
-    ];
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-    const wardrobe = [
-      Color(0xFFE8DCC8),
-      Color(0xFFD9C8AE),
-      Color(0xFFFFFDF7),
-      Color(0xFFD6E4CF),
-      Color(0xFFEADFD1),
-      Color(0xFFE5D9C3),
-      Color(0xFFD8C4B6),
-      Color(0xFFF0E6D8),
-      Color(0xFFE2D5C2),
-    ];
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _picker = ImagePicker();
+  bool _isUploadingPhoto = false;
+
+  User? get _user => FirebaseAuth.instance.currentUser;
+
+  Future<void> _pickProfilePhoto() async {
+    final user = _user;
+    if (user == null || _isUploadingPhoto) return;
+
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 45,
+        maxWidth: 600,
+        maxHeight: 600,
+      );
+      if (image == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+      final Uint8List bytes = await image.readAsBytes();
+      if (bytes.length > 600000) {
+        throw Exception('Please choose a smaller image.');
+      }
+      final imageBase64 = base64Encode(bytes);
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'profileImageBase64': imageBase64,
+        'email': user.email,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not upload profile photo: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _editName() async {
+    final user = _user;
+    if (user == null) return;
+
+    final controller = TextEditingController(text: user.displayName ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: _card,
+        title: const Text('Edit profile name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Your name',
+            prefixIcon: Icon(Icons.person_outline_rounded),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty) return;
+
+    try {
+      await user.updateDisplayName(name);
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'displayName': name,
+        'email': user.email,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      await user.reload();
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not update name: $error')),
+      );
+    }
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _postsStream() {
+    return FirebaseFirestore.instance
+        .collection('outfit_posts')
+        .where('userId', isEqualTo: _user?.uid ?? '')
+        .snapshots();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = _user;
+    final displayName =
+        user?.displayName ?? user?.email?.split('@').first ?? 'Modesta User';
 
     return SafeArea(
       top: false,
@@ -53,166 +136,135 @@ class ProfileScreen extends StatelessWidget {
               color: _card,
               borderRadius: BorderRadius.circular(26),
               border: Border.all(color: _beige),
-              boxShadow: [
-                BoxShadow(
-                  color: _brown.withValues(alpha: 0.05),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             child: Column(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Stack(
+                  alignment: Alignment.bottomRight,
                   children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        const CircleAvatar(
-                          radius: 48,
+                    StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: user == null
+                          ? null
+                          : FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .snapshots(),
+                      builder: (context, snapshot) {
+                        final imageBase64 = snapshot.data
+                            ?.data()?['profileImageBase64'] as String?;
+                        return CircleAvatar(
+                          radius: 52,
                           backgroundColor: _beige,
-                          child: Icon(Icons.person_rounded,
-                              size: 54, color: _brown),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: _brown,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.add_a_photo_rounded,
-                              size: 15, color: _card),
-                        ),
-                      ],
+                          backgroundImage: imageBase64 == null
+                              ? null
+                              : MemoryImage(base64Decode(imageBase64)),
+                          child: imageBase64 == null
+                              ? const Icon(Icons.person_rounded,
+                                  size: 58, color: _brown)
+                              : null,
+                        );
+                      },
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Sophia Style',
-                            style: TextStyle(
-                              color: _text,
-                              fontFamily: 'Georgia',
-                              fontSize: 23,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            '@sofia.style',
-                            style: TextStyle(color: _brown, fontSize: 13),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Soft neutrals, modest silhouettes, capsule wardrobe styling, and polished daily looks.',
-                            style: TextStyle(
-                              color: _muted,
-                              fontSize: 12,
-                              height: 1.45,
-                            ),
-                          ),
-                        ],
+                    Material(
+                      color: _brown,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _pickProfilePhoto,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: _isUploadingPhoto
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.add_a_photo_rounded,
+                                  size: 17, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _stat('48', 'Posts'),
-                    _divider(),
-                    _stat('18.2k', 'Followers'),
-                    _divider(),
-                    _stat('320', 'Following'),
-                  ],
+                const SizedBox(height: 14),
+                Text(
+                  displayName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _text,
+                    fontFamily: 'Georgia',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                const Row(
-                  children: [
-                    Expanded(
-                        child: _ProfileButton(
-                            label: 'Edit Profile', filled: true)),
-                    SizedBox(width: 10),
-                    Expanded(child: _ProfileButton(label: 'Share Profile')),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  user?.email ?? '',
+                  style: const TextStyle(color: _muted, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton.icon(
+                    onPressed: _editName,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit profile name'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _brown,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 18),
-          const Text(
-            'Style preferences',
-            style: TextStyle(
-                color: _text, fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          const Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _Preference(label: 'Elegant'),
-              _Preference(label: 'Warm neutrals'),
-              _Preference(label: 'Modest'),
-              _Preference(label: 'Capsule wardrobe'),
-              _Preference(label: 'Sage accents'),
-            ],
-          ),
           const SizedBox(height: 24),
-          _sectionHeader('Saved looks', 'View all'),
+          const Text(
+            'My posts',
+            style: TextStyle(
+              color: _text,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 218,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: savedLooks.length,
-              itemBuilder: (context, index) {
-                return SizedBox(
-                  width: 160,
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _postsStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: OutfitCard(outfit: savedLooks[index]),
+                    padding: EdgeInsets.all(30),
+                    child: CircularProgressIndicator(color: _brown),
                   ),
                 );
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-          _sectionHeader('Style gallery', 'Pinterest mood'),
-          const SizedBox(height: 12),
-          const _PinterestGallery(colors: wardrobe),
-          const SizedBox(height: 24),
-          _sectionHeader('Wardrobe grid', '9 items'),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 9,
-              mainAxisSpacing: 9,
-              childAspectRatio: 0.9,
-            ),
-            itemCount: wardrobe.length,
-            itemBuilder: (context, i) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: wardrobe[i],
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: _beige.withValues(alpha: 0.8)),
+              }
+
+              final posts = snapshot.data?.docs ?? [];
+              if (posts.isEmpty) {
+                return const _EmptyPosts();
+              }
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.78,
                 ),
-                child: Center(
-                  child: Icon(
-                    i.isEven
-                        ? Icons.checkroom_rounded
-                        : Icons.shopping_bag_rounded,
-                    color: _card.withValues(alpha: 0.82),
-                    size: 30,
-                  ),
-                ),
+                itemCount: posts.length,
+                itemBuilder: (context, index) =>
+                    _ProfilePost(data: posts[index].data()),
               );
             },
           ),
@@ -220,152 +272,89 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _sectionHeader(String title, String action) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: _text,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        Text(
-          action,
-          style: const TextStyle(
-            color: _brown,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _stat(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: _text,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        Text(label, style: const TextStyle(color: _muted, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _divider() => Container(height: 34, width: 1, color: _beige);
 }
 
-class _PinterestGallery extends StatelessWidget {
-  const _PinterestGallery({required this.colors});
+class _ProfilePost extends StatelessWidget {
+  const _ProfilePost({required this.data});
 
-  final List<Color> colors;
+  final Map<String, dynamic> data;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-            child: _GalleryColumn(
-                colors: colors.take(4).toList(), tallFirst: true)),
-        const SizedBox(width: 9),
-        Expanded(
-            child: _GalleryColumn(colors: colors.skip(4).take(5).toList())),
-      ],
+    final imageUrl = data['imageUrl'] as String?;
+    final imageBase64 = data['imageBase64'] as String?;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _beige),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: imageBase64 != null
+                ? Image.memory(
+                    base64Decode(imageBase64),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : imageUrl == null || imageUrl.isEmpty
+                    ? const ColoredBox(
+                        color: _beige,
+                        child: Center(
+                          child: Icon(Icons.checkroom_rounded,
+                              color: _brown, size: 42),
+                        ),
+                      )
+                    : Image.network(
+                        imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(
+              data['caption'] ?? 'My outfit',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _text,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _GalleryColumn extends StatelessWidget {
-  const _GalleryColumn({required this.colors, this.tallFirst = false});
-
-  final List<Color> colors;
-  final bool tallFirst;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(colors.length, (index) {
-        final height = (tallFirst && index == 0) || (!tallFirst && index == 1)
-            ? 170.0
-            : 118.0;
-        return Container(
-          height: height,
-          margin: const EdgeInsets.only(bottom: 9),
-          decoration: BoxDecoration(
-            color: colors[index],
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _beige),
-          ),
-          child: Center(
-            child: Icon(Icons.checkroom_rounded,
-                color: _card.withValues(alpha: 0.8), size: 38),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _ProfileButton extends StatelessWidget {
-  const _ProfileButton({required this.label, this.filled = false});
-
-  final String label;
-  final bool filled;
+class _EmptyPosts extends StatelessWidget {
+  const _EmptyPosts();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
+      padding: const EdgeInsets.symmetric(vertical: 38, horizontal: 20),
       decoration: BoxDecoration(
-        color: filled ? _brown : _card,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: filled ? _brown : _beige),
+        color: _card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _beige),
       ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: filled ? _card : _brown,
-            fontWeight: FontWeight.w900,
-            fontSize: 13,
+      child: const Column(
+        children: [
+          Icon(Icons.add_photo_alternate_outlined, color: _brown, size: 46),
+          SizedBox(height: 10),
+          Text(
+            'Your published posts will appear here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _muted, fontWeight: FontWeight.w700),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Preference extends StatelessWidget {
-  const _Preference({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: _sage.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: _sage.withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: _text,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-        ),
+        ],
       ),
     );
   }

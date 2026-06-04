@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'quiz_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,11 +20,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const QuizScreen(),
-      ),
-    );
+    final destination =
+        FirebaseAuth.instance.currentUser == null ? '/login' : '/home';
+    Navigator.of(context).pushReplacementNamed(destination);
   }
 
   @override
